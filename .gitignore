@@ -1,0 +1,18 @@
+# Unity
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+Packages/**/Cache/
+
+# Visual Studio
+.vs/
+.idea/
+*.csproj
+*.sln
+*.user
+*.suo
