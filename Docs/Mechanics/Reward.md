@@ -1,4 +1,4 @@
-# 潜渊（Abyssfall）- 奖励系统
+# 潜渊（Abyssal Dive）- 奖励系统
 
 > 状态：已定稿
 > 位置：Mechanics/Reward.md

@@ -1,4 +1,4 @@
-# 潜渊（Abyssfall）- 世界观
+# 潜渊（Abyssal Dive）- 世界观
 
 > 状态：已定稿
 > 位置：Mechanics/World.md
