@@ -13,13 +13,13 @@ namespace AbyssalDive {
 
             var config = new GameConfig {
                 playerHealth = 100,
-                playerAttack = 13,
+                playerAttack = 12,
                 playerDefense = 2,
                 playerSpeed = 8,
                 waves = 5,
-                enemyBaseHealth = 32,
+                enemyBaseHealth = 30,
                 enemyBaseAttack = 8,
-                enemyScaling = 0.3f
+                enemyScaling = 0.33f
             };
 
             Console.WriteLine($"配置: HP={config.playerHealth}, ATK={config.playerAttack}, DEF={config.playerDefense}, SPD={config.playerSpeed}");
@@ -35,6 +35,8 @@ namespace AbyssalDive {
 
             PrintResults();
         }
+
+        static Random _globalRandom = new Random();
 
         static bool RunSingleGame(GameConfig config) {
             var player = new UnitSim {
@@ -65,7 +67,7 @@ namespace AbyssalDive {
 
                 if (!player.IsAlive) return false;
 
-                player.currentHealth = Math.Min(player.maxHealth, player.currentHealth + (int)(player.maxHealth * 0.2f));
+                player.currentHealth = Math.Min(player.maxHealth, player.currentHealth + (int)(player.maxHealth * (0.12f + _globalRandom.NextDouble() * 0.06f)));
                 player.attack += 1;
             }
 
@@ -197,7 +199,8 @@ namespace AbyssalDive {
         }
 
         void DealDamage(UnitSim attacker, UnitSim target, int damage) {
-            int actual = Math.Max(0, damage - target.defense);
+            int variance = (int)((_random.NextDouble() - 0.5) * damage * 0.3); // +/-15% damage variance
+            int actual = Math.Max(0, damage + variance - target.defense);
             target.currentHealth -= actual;
         }
     }
