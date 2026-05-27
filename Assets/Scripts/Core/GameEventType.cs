@@ -34,6 +34,9 @@ namespace AbyssalDive {
         StateStackChanged,
 
         // 战斗事件
-        BattleEnd       // 战斗结束
+        BattleEnd,      // 战斗结束
+
+        // 行动值事件
+        ActionValueFull // 行动值满，可执行行动
     }
 }

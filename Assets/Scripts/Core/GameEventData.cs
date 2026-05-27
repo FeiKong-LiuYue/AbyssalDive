@@ -14,6 +14,9 @@ namespace AbyssalDive {
         public Unit target;
         public float damage;
         public bool isHit;
+        public bool isFollowUp;      // 是否追击
+        public bool isCounter;      // 是否反击
+        public float shieldBefore;   // 攻击前目标护盾值
     }
 
     /// <summary>
@@ -31,5 +34,29 @@ namespace AbyssalDive {
     public class DeathEventData : GameEventData {
         public Unit deadUnit;
         public Unit killer;
+    }
+
+    /// <summary>
+    /// 护盾事件数据
+    /// </summary>
+    public class ShieldEventData : GameEventData {
+        public Unit unit;
+        public float shieldBefore;
+        public float shieldAfter;
+    }
+
+    /// <summary>
+    /// 回合事件数据
+    /// </summary>
+    public class TurnEventData : GameEventData {
+        public int turnNumber;
+    }
+
+    /// <summary>
+    /// 行动执行事件数据
+    /// </summary>
+    public class ActionEventData : GameEventData {
+        public Unit unit;
+        public ActionData action;
     }
 }

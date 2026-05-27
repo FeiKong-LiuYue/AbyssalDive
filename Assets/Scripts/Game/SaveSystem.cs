@@ -52,10 +52,11 @@ namespace AbyssalDive {
         }
 
         /// <summary>
-        /// 检查存档是否存在
+        /// 检查存档是否存在（静态方法）
         /// </summary>
-        public bool HasSave() {
-            return File.Exists(_savePath);
+        public static bool HasSaveData() {
+            string path = Application.persistentDataPath + "/save.json";
+            return File.Exists(path);
         }
 
         /// <summary>

@@ -394,7 +394,7 @@ namespace AbyssalDive {
             }
         }
 
-        // ==================== 基础类（21个）====================
+        // ==================== 基础类（11个）====================
 
         private static void ExecuteBasicAction(Unit attacker, Unit target, ActionData action) {
             switch (action.type) {
@@ -403,24 +403,12 @@ namespace AbyssalDive {
                     break;
 
                 case ActionType.爆发:
-                    // 添加"爆发增益"标记：下一次物理伤害+30%/45%/60%
                     attacker.AddState(StateConfig.爆发增益, action.level);
                     break;
 
                 case ActionType.疾风:
                     int windCount = action.level + 1;
                     attacker.AddState(StateConfig.疾风, windCount);
-                    break;
-
-                case ActionType.破碎:
-                    float baseDmg = 10f + action.level * 5f;
-                    if (target.shieldComponent.currentShield > 0) {
-                        baseDmg += 5f + action.level * 3f;
-                    }
-                    target.TakeDamage(baseDmg, attacker);
-                    if (action.level >= 3) {
-                        attacker.AddState(StateConfig.护盾穿透, 1);
-                    }
                     break;
 
                 case ActionType.坚壁:
@@ -438,44 +426,33 @@ namespace AbyssalDive {
                     }
                     break;
 
-                case ActionType.叠劲:
-                    float dmg = 10f + action.level * 2f;
-                    target.TakeDamage(dmg, attacker);
-                    attacker.AddState(StateConfig.叠劲, 1);
-                    break;
-
-                case ActionType.侵蚀攻击:
-                    float erodeDmg = DamageCalculator.CalculatePhysicalDamage(attacker, target, 10f + action.level * 2f);
-                    float hpBefore = target.currentHealth;
-                    target.TakeDamage(erodeDmg, attacker);
-                    PublishHitEvent(attacker, target, erodeDmg);
-
-                    if (target.currentHealth < hpBefore) {
-                        target.maxHealth -= 5f + action.level * 3f;
-                        if (target.currentHealth > target.maxHealth) {
-                            target.currentHealth = target.maxHealth;
-                        }
-                    }
-                    break;
-
                 case ActionType.治疗:
                     attacker.Heal(15f + action.level * 10f);
                     break;
 
-                case ActionType.施加易伤:
-                    target.AddState(StateConfig.易伤, action.level);
-                    break;
-
-                case ActionType.施加虚弱:
-                    target.AddState(StateConfig.虚弱, action.level);
+                case ActionType.减益冲击:
+                    // 易伤/虚弱/威慑组合
+                    if (action.level == 1) {
+                        target.AddState(StateConfig.易伤, 1);
+                    } else if (action.level == 2) {
+                        target.AddState(StateConfig.易伤, 2);
+                        target.AddState(StateConfig.虚弱, 1);
+                    } else {
+                        target.AddState(StateConfig.易伤, 3);
+                        target.AddState(StateConfig.虚弱, 2);
+                        target.AddState(StateConfig.威慑, 1);
+                    }
                     break;
 
                 case ActionType.猛攻:
+                    // 目标有易伤/虚弱/眩晕时追加伤害
                     float baseAttackDmg = 12f + action.level * 3f;
                     int vulnStacks = target.stateComponent.GetStateStacks("易伤");
+                    int weakStacks = target.stateComponent.GetStateStacks("虚弱");
+                    int stunStacks = target.stateComponent.GetStateStacks("眩晕");
 
                     target.TakeDamage(baseAttackDmg, attacker);
-                    if (vulnStacks > 0) {
+                    if (vulnStacks > 0 || weakStacks > 0 || stunStacks > 0) {
                         float bonusDmg = 8f + action.level * 4f;
                         target.TakeDamage(bonusDmg, attacker);
                     }
@@ -486,72 +463,31 @@ namespace AbyssalDive {
                     }
                     break;
 
-                case ActionType.猎杀:
+                case ActionType.血猎:
+                    // 猎杀+致命追击合并
                     float huntDmg = 12f + action.level * 3f;
-                    float targetHpBefore = target.currentHealth;
                     target.TakeDamage(huntDmg, attacker);
 
                     if (target.currentHealth <= 0) {
                         attacker.maxHealth += 5f + action.level * 3f;
                         attacker.currentHealth += 5f + action.level * 3f;
-                    }
-                    break;
-
-                case ActionType.致命追击:
-                    float lethalDmg = 10f + action.level * 2f;
-                    target.TakeDamage(lethalDmg, attacker);
-
-                    if (target.currentHealth <= 0 && attacker is PlayerUnit lethalPlayer) {
-                        lethalPlayer.bonusAttack += 2f + action.level;
+                        if (attacker is PlayerUnit huntPlayer) {
+                            huntPlayer.bonusAttack += 2f + action.level;
+                        }
                         if (action.level >= 3) {
-                            lethalPlayer.AddState(StateConfig.战意, 3);
+                            attacker.AddState(StateConfig.战意, 3);
                         }
                     }
                     break;
 
-                case ActionType.恐吓:
-                    target.AddState(StateConfig.威慑, action.level);
-                    break;
-
-                case ActionType.眩晕打击:
-                    float stunDmg = 12f + action.level * 3f;
-                    int stunStacks = target.stateComponent.GetStateStacks("眩晕");
-
-                    if (stunStacks > 0) {
-                        float multiplier = action.level == 1 ? 1.5f : 2f;
-                        stunDmg *= multiplier;
-                    }
-                    target.TakeDamage(stunDmg, attacker);
-
-                    if (action.level >= 3) {
-                        target.AddState(StateConfig.眩晕, 1);
-                    }
-                    break;
-
-                case ActionType.随机升级:
-                    var playerActions = GameManager.Instance?.player?.actionBar;
-                    if (playerActions != null && playerActions.Count > 0) {
-                        if (action.level == 1) {
-                            var randomAction = playerActions[Random.Range(0, playerActions.Count)];
-                            randomAction.level = Mathf.Min(randomAction.level + 1, 3);
-                        } else if (action.level == 2) {
-                            var randomAction = playerActions[Random.Range(0, playerActions.Count)];
-                            randomAction.level = 3;
-                        } else {
-                            foreach (var a in playerActions) {
-                                a.level = 3;
-                            }
-                        }
-                    }
-                    break;
-
-                case ActionType.残势斩:
-                    float 残势Dmg = 10f + action.level * 2f;
+                case ActionType.致命:
+                    // 血量联动伤害
+                    float fatalDmg = 10f + action.level * 2f;
                     float healthPercentLost = 1f - (attacker.currentHealth / attacker.maxHealth);
                     int bonusStacks = Mathf.FloorToInt(healthPercentLost * 10);
                     int bonusDmg = Mathf.Min(bonusStacks * (action.level + 1), 20);
 
-                    target.TakeDamage(残势Dmg + bonusDmg, attacker);
+                    target.TakeDamage(fatalDmg + bonusDmg, attacker);
                     break;
 
                 case ActionType.镜像:
